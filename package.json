@@ -1,0 +1,16 @@
+{
+  "name": "mc-client-dashboard",
+  "version": "1.0.0",
+  "description": "Headless Minecraft multi-bot manager with a web dashboard (Termux-friendly).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mineflayer": "^4.37.1",
+    "ws": "^8.21.1"
+  }
+}

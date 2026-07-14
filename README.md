@@ -1,10 +1,12 @@
-# Termux Minecraft Bot Manager
+# Minecraft Bot Manager
 
-A lightweight, terminal-based dashboard for running and managing multiple
-offline-mode Minecraft bots from a single Android phone using
-[Termux](https://termux.dev/) and [Mineflayer](https://github.com/PrismarineJS/mineflayer).
+A lightweight **headless** Minecraft bot service with a **mobile-friendly web
+dashboard**, built to run on an Android phone via [Termux](https://termux.dev/)
+and [Mineflayer](https://github.com/PrismarineJS/mineflayer).
 
-Clone → run setup → launch. No manual configuration required.
+The bot engine runs as a background Node.js service; you control everything from
+a web UI in your phone's browser — account management, live status, and
+survival transit — no terminal juggling required.
 
 ## Quick Start
 
@@ -16,43 +18,81 @@ cd MC-client-dashboard
 # 2. Run the one-shot setup script (installs Node.js + dependencies)
 bash setup.sh
 
-# 3. Launch the dashboard
-node index.js
+# 3. Launch the headless service
+node server.js
+
+# 4. Open the dashboard in your phone browser
+#    http://localhost:3000
 ```
 
 ## Features
 
-- **Multi-Bot Management** — add bots by username; each runs as its own
-  isolated Mineflayer instance in the background. A live status table shows
-  each bot's connection state, location (Lobby vs. Survival), and auth status.
-- **Smart / Conditional Authentication** — bots connect in offline mode. If the
-  server chat contains `login` or `register` (case-insensitive), the bot
-  automatically runs `/login <password>`. If nothing is detected within 5
-  seconds, the bot is marked *Bypassed/Already Authenticated*.
-- **Interactive Survival Transit** — user-triggered. Pick a bot (or *All Bots*),
-  which sends `/server` and, when the chest GUI opens, clicks **Row 3, Column 2**
-  (slot index `19`) to move into the survival world.
-- **Graceful Error & Reconnect Handling** — kicked/disconnected bots
-  auto-reconnect after a 5-second cooldown, and per-bot errors are contained so
-  one crash can't take down the dashboard.
+### Account Management (persistent)
+- **Create accounts** with a username + password from the dashboard.
+- Each account is saved to `accounts.json` in the project root, so it survives
+  restarts. (This file holds passwords and is git-ignored.)
+- Start / stop / delete any bot individually; passwords can be updated.
+
+### Smart / Conditional Authentication with Register Redundancy
+Bots connect in **offline mode**. Based on server chat (case-insensitive):
+- Server asks to **login** → sends `/login <password>`.
+- Server asks to **register** → sends `/register <password> <password>`, then a
+  redundancy `/login <password>` shortly after (for servers that require a
+  separate login step).
+- A failed `/login` that gets a *"not registered"* reply is caught by the same
+  handler and triggers registration automatically.
+- If **no** auth prompt appears within 5 seconds of spawning, the bot is marked
+  **Bypassed/Already Authenticated** and no command is sent.
+
+### Interactive Survival Transit (chest-GUI navigation)
+- User-triggered per bot, or **Survival Transit · All** for every online bot.
+- Sends `/server`, waits for the chest GUI (`windowOpen`), then clicks
+  **Row 3, Column 2** — slot index `19` — via `bot.clickWindow(19, 0, 0)`.
+- Checks whether slot 19 is an `iron_pickaxe` (clicks by position regardless)
+  and logs a success message once the click registers.
+
+### Graceful Error & Reconnect Handling
+- Kicked/disconnected bots auto-reconnect after a 5-second cooldown.
+- Per-bot errors are contained, plus process-level safety nets, so one bot
+  failing never takes down the service or the dashboard.
+
+## Architecture
+
+```
+server.js            HTTP + WebSocket server; serves the dashboard, relays
+                     engine events, and dispatches UI commands.
+lib/botManager.js    Headless multi-bot engine (EventEmitter): auth, transit,
+                     reconnect. Emits 'state' and 'log'.
+lib/accounts.js      Persistent per-account credential store (accounts.json).
+public/index.html    Self-contained mobile web dashboard (HTML/CSS/JS).
+```
+
+The browser talks to the service over a WebSocket: the service pushes `state`
+(account list + live status) and `log` messages; the browser sends commands
+(`createAccount`, `startBot`, `survivalTransit`, …).
 
 ## Configuration
 
-Sensible defaults live at the top of `index.js` (`CONFIG`). You can also change
-the server host, port, and auto-login password at runtime via the
-**Configure Server** menu option.
-
-| Setting            | Default       | Description                                  |
-| ------------------ | ------------- | -------------------------------------------- |
-| `host`             | `localhost`   | Target server address                        |
-| `port`             | `25565`       | Target server port                           |
-| `password`         | `password123` | Password used for the auto `/login` command  |
-| `authWindowMs`     | `5000`        | Auth-prompt detection window                 |
-| `reconnectDelayMs` | `5000`        | Reconnect cooldown                           |
-| `survivalSlot`     | `19`          | Chest slot clicked during survival transit   |
+- **Server host/port** — set from the dashboard's *Server* panel, or via the
+  defaults in `lib/botManager.js` (`DEFAULTS`).
+- **Dashboard port** — defaults to `3000`; override with `PORT=8080 node server.js`.
+- **Auth timing, reconnect delay, survival slot** — all in `DEFAULTS` in
+  `lib/botManager.js`.
 
 ## Requirements
 
-- Termux (Android)
-- Node.js (installed automatically by `setup.sh`)
-- `mineflayer@26.1.2`, `prompts` (installed automatically by `setup.sh`)
+- Termux (Android) — or any machine with Node.js.
+- Node.js (installed automatically by `setup.sh`).
+- `mineflayer@4.37.1`, `ws` (installed automatically by `setup.sh`).
+
+> **Note on the Mineflayer version:** there is no `mineflayer@26.1.2` on npm —
+> Mineflayer's current line is `4.x` (latest `4.37.1`, which supports modern
+> Minecraft versions). This project pins `4.37.1`. If you specifically need a
+> different Minecraft protocol version, set `version` in `lib/botManager.js`.
+
+## Native APK (later)
+
+Because Mineflayer is a Node.js library, the "app" is a headless Node service +
+web UI. To ship a real installable APK later, wrap this dashboard URL in a thin
+WebView shell, or embed Node via [`nodejs-mobile`](https://github.com/nodejs-mobile/nodejs-mobile).
+The engine (`lib/`) is UI-agnostic and reusable as-is.

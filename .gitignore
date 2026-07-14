@@ -3,3 +3,6 @@ package-lock.json
 npm-debug.log*
 *.log
 .DS_Store
+
+# Local account credentials (contains passwords)
+accounts.json

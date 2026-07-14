@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Minecraft Bot Manager</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1e222d;
+    --border: #2a2f3c;
+    --text: #e6e9ef;
+    --muted: #8a90a2;
+    --accent: #4f8cff;
+    --green: #3ecf8e;
+    --yellow: #f5b74e;
+    --red: #ff5c6c;
+    --cyan: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    padding: 12px;
+    max-width: 780px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin: 4px 0 2px; }
+  h2 { font-size: 15px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  input, select {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 14px;
+    width: 100%;
+  }
+  .field { flex: 1 1 120px; min-width: 0; }
+  .checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .checkbox input { width: auto; }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:active { opacity: .8; }
+  button.ghost { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); }
+  button.small { padding: 6px 10px; font-size: 13px; }
+  button.danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+  button.warn { background: transparent; border: 1px solid var(--yellow); color: var(--yellow); }
+  button.ok { background: transparent; border: 1px solid var(--green); color: var(--green); }
+
+  .conn { font-size: 12px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border); }
+  .conn.up { color: var(--green); border-color: var(--green); }
+  .conn.down { color: var(--red); border-color: var(--red); }
+
+  .account {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--panel-2);
+  }
+  .account .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .account .name { font-weight: 600; font-size: 16px; }
+  .meta { display: flex; gap: 14px; flex-wrap: wrap; margin: 8px 0 10px; font-size: 12px; color: var(--muted); }
+  .meta b { color: var(--text); font-weight: 600; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+  .badge.online { background: rgba(62,207,142,.15); color: var(--green); }
+  .badge.connecting { background: rgba(56,189,248,.15); color: var(--cyan); }
+  .badge.offline, .badge.stopped { background: rgba(138,144,162,.15); color: var(--muted); }
+  .badge.kicked, .badge.error { background: rgba(255,92,108,.15); color: var(--red); }
+
+  .empty { color: var(--muted); font-size: 14px; text-align: center; padding: 18px 0; }
+
+  #log {
+    background: #0a0c11;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    height: 220px;
+    overflow-y: auto;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .logline { white-space: pre-wrap; word-break: break-word; }
+  .logline .tag { color: var(--cyan); }
+  .logline .t { color: var(--muted); }
+  .lvl-success { color: var(--green); }
+  .lvl-warn { color: var(--yellow); }
+  .lvl-error { color: var(--red); }
+  .lvl-info { color: var(--text); }
+  .spacer { height: 2px; }
+</style>
+</head>
+<body>
+  <div class="row" style="justify-content:space-between;">
+    <div>
+      <h1>Minecraft Bot Manager</h1>
+      <div class="sub" id="serverLabel">Headless multi-bot dashboard</div>
+    </div>
+    <span class="conn down" id="conn">disconnected</span>
+  </div>
+
+  <!-- Server configuration -->
+  <div class="panel">
+    <h2>Server</h2>
+    <div class="row">
+      <div class="field">
+        <label>Host</label>
+        <input id="cfgHost" placeholder="localhost" />
+      </div>
+      <div class="field" style="flex:0 0 110px;">
+        <label>Port</label>
+        <input id="cfgPort" type="number" placeholder="25565" />
+      </div>
+      <div style="align-self:flex-end;">
+        <button class="ghost" onclick="saveServer()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create account -->
+  <div class="panel">
+    <h2>Create Account</h2>
+    <div class="row">
+      <div class="field">
+        <label>Username</label>
+        <input id="newUser" placeholder="Steve" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Password (for /login &amp; /register)</label>
+        <input id="newPass" placeholder="password" autocomplete="off" />
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="row" style="justify-content:space-between;">
+      <label class="checkbox"><input type="checkbox" id="autoStart" checked /> Start bot immediately</label>
+      <button onclick="createAccount()">Create Account</button>
+    </div>
+  </div>
+
+  <!-- Accounts -->
+  <div class="panel">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;">Accounts</h2>
+      <button class="ok small" onclick="transit('__all__')">Survival Transit · All</button>
+    </div>
+    <div id="accounts"><div class="empty">No accounts yet. Create one above.</div></div>
+  </div>
+
+  <!-- Log -->
+  <div class="panel">
+    <h2>Activity Log</h2>
+    <div id="log"></div>
+  </div>
+
+<script>
+  let ws = null;
+  let state = { accounts: [], config: { host: '', port: '' } };
+  let cfgTouched = false;
+
+  const $ = (id) => document.getElementById(id);
+
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}`);
+    ws.onopen = () => setConn(true);
+    ws.onclose = () => { setConn(false); setTimeout(connect, 2000); };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      if (msg.type === 'state') { state = msg; renderState(); }
+      else if (msg.type === 'log') { appendLog(msg); }
+    };
+  }
+
+  function setConn(up) {
+    const el = $('conn');
+    el.textContent = up ? 'connected' : 'disconnected';
+    el.className = 'conn ' + (up ? 'up' : 'down');
+  }
+
+  function sendCmd(obj) {
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+  }
+
+  function renderState() {
+    // Server config (don't clobber inputs the user is editing).
+    $('serverLabel').textContent = `Target server: ${state.config.host}:${state.config.port}`;
+    if (!cfgTouched) {
+      $('cfgHost').value = state.config.host || '';
+      $('cfgPort').value = state.config.port || '';
+    }
+
+    const container = $('accounts');
+    if (!state.accounts.length) {
+      container.innerHTML = '<div class="empty">No accounts yet. Create one above.</div>';
+      return;
+    }
+
+    container.innerHTML = state.accounts.map((a) => {
+      const status = (a.status || 'stopped').toLowerCase().replace(/[^a-z]/g, '');
+      const badgeClass = ['online','connecting','offline','stopped','kicked','error'].includes(status) ? status : 'offline';
+      const running = a.running;
+      const startStop = running
+        ? `<button class="warn small" onclick="stopBot('${esc(a.username)}')">Stop</button>`
+        : `<button class="ok small" onclick="startBot('${esc(a.username)}')">Start</button>`;
+      return `
+        <div class="account">
+          <div class="top">
+            <span class="name">${esc(a.username)}</span>
+            <span class="badge ${badgeClass}">${esc(a.status)}</span>
+          </div>
+          <div class="meta">
+            <span>Location: <b>${esc(a.location)}</b></span>
+            <span>Auth: <b>${esc(a.auth)}</b></span>
+            <span>Password: <b>${a.hasPassword ? 'set' : 'none'}</b></span>
+          </div>
+          <div class="actions">
+            ${startStop}
+            <button class="ghost small" onclick="transit('${esc(a.username)}')">Survival Transit</button>
+            <button class="danger small" onclick="del('${esc(a.username)}')">Delete</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function appendLog(entry) {
+    const box = $('log');
+    const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+    const time = new Date(entry.time || Date.now()).toLocaleTimeString();
+    const div = document.createElement('div');
+    div.className = 'logline';
+    div.innerHTML = `<span class="t">${time}</span> <span class="tag">[${esc(entry.username)}]</span> <span class="lvl-${esc(entry.level || 'info')}">${esc(entry.message)}</span>`;
+    box.appendChild(div);
+    while (box.childElementCount > 300) box.removeChild(box.firstChild);
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+
+  // --- Commands -------------------------------------------------------------
+  function createAccount() {
+    const username = $('newUser').value.trim();
+    const password = $('newPass').value;
+    if (!username) return;
+    sendCmd({ type: 'createAccount', username, password, autoStart: $('autoStart').checked });
+    $('newUser').value = '';
+    $('newPass').value = '';
+  }
+  function startBot(u) { sendCmd({ type: 'startBot', username: u }); }
+  function stopBot(u) { sendCmd({ type: 'stopBot', username: u }); }
+  function del(u) {
+    if (confirm(`Delete account "${u}"? This stops the bot and removes it.`)) {
+      sendCmd({ type: 'deleteAccount', username: u });
+    }
+  }
+  function transit(target) { sendCmd({ type: 'survivalTransit', target }); }
+  function saveServer() {
+    sendCmd({ type: 'updateServer', host: $('cfgHost').value.trim(), port: Number($('cfgPort').value) });
+    cfgTouched = false;
+  }
+
+  // Escape for safe HTML injection.
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  $('cfgHost').addEventListener('input', () => cfgTouched = true);
+  $('cfgPort').addEventListener('input', () => cfgTouched = true);
+  $('newUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newPass').focus(); });
+  $('newPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
+
+  connect();
+</script>
+</body>
+</html>

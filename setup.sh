@@ -42,11 +42,11 @@ fi
 # ----------------------------------------------------------------------------
 # 4. Install the required npm packages
 #    - mineflayer 26.1.2 : the Minecraft bot engine
-#    - prompts           : the interactive terminal UI
+#    - ws                : the WebSocket channel for the web dashboard
 # ----------------------------------------------------------------------------
 echo ""
-echo "[4/5] Installing npm dependencies (mineflayer@26.1.2, prompts)..."
-npm install mineflayer@26.1.2 prompts
+echo "[4/5] Installing npm dependencies (mineflayer@26.1.2, ws)..."
+npm install mineflayer@26.1.2 ws
 
 # ----------------------------------------------------------------------------
 # 5. Done
@@ -55,8 +55,12 @@ echo ""
 echo "[5/5] Setup complete!"
 echo ""
 echo "==============================================="
-echo "  All set. Launch the dashboard with:"
+echo "  All set. Launch the headless service with:"
 echo ""
-echo "      node index.js"
+echo "      node server.js"
+echo ""
+echo "  Then open the dashboard in your phone browser:"
+echo ""
+echo "      http://localhost:3000"
 echo ""
 echo "==============================================="
