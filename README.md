@@ -47,8 +47,8 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
 ### Interactive Survival Transit (chest-GUI navigation)
 - User-triggered per bot, or **Survival Transit · All** for every online bot.
 - Sends `/server`, waits for the chest GUI (`windowOpen`), then clicks
-  **Row 3, Column 2** — slot index `19` — via `bot.clickWindow(19, 0, 0)`.
-- Checks whether slot 19 is an `iron_pickaxe` (clicks by position regardless)
+  **Row 2, Column 3** — slot index `11` — via `bot.clickWindow(11, 0, 0)`.
+- Checks whether slot 11 is an `iron_pickaxe` (clicks by position regardless)
   and logs a success message once the click registers.
 
 ### Graceful Error & Reconnect Handling
