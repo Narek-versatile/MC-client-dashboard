@@ -6,7 +6,7 @@
 #   bash setup.sh
 #
 # This script prepares a clean Termux installation so that the dashboard can be
-# launched immediately afterwards with `node index.js`.
+# launched immediately afterwards with `node server.js`.
 
 set -e
 
@@ -41,12 +41,13 @@ fi
 
 # ----------------------------------------------------------------------------
 # 4. Install the required npm packages
-#    - mineflayer 26.1.2 : the Minecraft bot engine
+#    - mineflayer 4.37.1 : the Minecraft bot engine (latest stable; there is
+#                           no 26.1.2 release on npm)
 #    - ws                : the WebSocket channel for the web dashboard
 # ----------------------------------------------------------------------------
 echo ""
-echo "[4/5] Installing npm dependencies (mineflayer@26.1.2, ws)..."
-npm install mineflayer@26.1.2 ws
+echo "[4/5] Installing npm dependencies (mineflayer@4.37.1, ws)..."
+npm install mineflayer@4.37.1 ws
 
 # ----------------------------------------------------------------------------
 # 5. Done
