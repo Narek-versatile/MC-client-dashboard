@@ -124,8 +124,11 @@ function handleCommand(ws, msg) {
         manager.updateConfig({
           host: msg.host,
           port: msg.port,
+          version: msg.version,
           transitCommand: msg.transitCommand,
           guiClick: msg.guiClick,
+          autoAcceptResourcePack: msg.autoAcceptResourcePack,
+          debug: msg.debug,
         });
         manager.emitState();
         break;

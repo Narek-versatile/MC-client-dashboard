@@ -149,17 +149,22 @@
         <label>Survival transit command</label>
         <input id="cfgTransit" placeholder="/server" />
       </div>
+      <div class="field" style="flex:0 0 130px;">
+        <label>MC version (blank = auto)</label>
+        <input id="cfgVersion" placeholder="auto" />
+      </div>
     </div>
     <div class="spacer"></div>
     <div class="row" style="gap:16px;">
       <label class="checkbox"><input type="checkbox" id="cfgGui" checked /> Click chest GUI after command</label>
+      <label class="checkbox"><input type="checkbox" id="cfgRp" checked /> Auto-accept resource packs</label>
       <label class="checkbox"><input type="checkbox" id="cfgDebug" checked /> Verbose debug logging</label>
     </div>
     <div class="spacer"></div>
     <div class="row" style="justify-content:flex-end;">
       <button class="ghost" onclick="saveServer()">Save</button>
     </div>
-    <div class="hint">Tip: if your server transfers you with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box. Keep <b>debug logging</b> on while diagnosing transit issues.</div>
+    <div class="hint">Tip: if survival transit gets kicked with "internal error", try setting <b>MC version</b> to <code>1.18.2</code> (then restart bots). Keep <b>auto-accept resource packs</b> on for servers like Jartex. If your server transfers with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box.</div>
   </div>
 
   <!-- Command injection -->
@@ -261,7 +266,9 @@
       $('cfgHost').value = state.config.host || '';
       $('cfgPort').value = state.config.port || '';
       $('cfgTransit').value = state.config.transitCommand || '/server';
+      $('cfgVersion').value = state.config.version || '';
       $('cfgGui').checked = state.config.guiClick !== false;
+      $('cfgRp').checked = state.config.autoAcceptResourcePack !== false;
       $('cfgDebug').checked = state.config.debug !== false;
     }
 
@@ -372,8 +379,10 @@
       type: 'updateServer',
       host: $('cfgHost').value.trim(),
       port: Number($('cfgPort').value),
+      version: $('cfgVersion').value.trim(),
       transitCommand: $('cfgTransit').value.trim(),
       guiClick: $('cfgGui').checked,
+      autoAcceptResourcePack: $('cfgRp').checked,
       debug: $('cfgDebug').checked,
     });
     cfgTouched = false;
@@ -386,10 +395,10 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  ['cfgHost', 'cfgPort', 'cfgTransit'].forEach((id) =>
+  ['cfgHost', 'cfgPort', 'cfgTransit', 'cfgVersion'].forEach((id) =>
     $(id).addEventListener('input', () => cfgTouched = true));
-  $('cfgGui').addEventListener('change', () => cfgTouched = true);
-  $('cfgDebug').addEventListener('change', () => cfgTouched = true);
+  ['cfgGui', 'cfgRp', 'cfgDebug'].forEach((id) =>
+    $(id).addEventListener('change', () => cfgTouched = true));
   $('newUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newPass').focus(); });
   $('newPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
   $('cmdText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCommand(); });

@@ -68,6 +68,18 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
 - Sent verbatim: include the leading `/` for a command (e.g. `/tp Steve`), or
   omit it to speak in chat. Each send is echoed in the activity log per bot.
 
+### Server transfers, resource packs & version
+Some networks (e.g. **JartexNetwork**) move you to survival by transferring you
+to a different backend server when you click the menu item. Two things can make
+that transfer fail with *"An internal error occurred in your connection"*:
+- **Resource pack** — the survival server may require accepting a server
+  resource pack; if it goes unanswered you get kicked. **Auto-accept resource
+  packs** (on by default, toggle in *Server & Transit*) answers it.
+- **Protocol version** — the modern (1.20.2+) configuration-phase transfer is
+  handled poorly by the bot library. Setting **MC version** to an older value
+  like `1.18.2` sidesteps it. Leave the field blank to auto-detect. Restart the
+  bot after changing the version.
+
 ### Diagnostics / Detailed Logging
 - **Verbose debug logging** (toggle in the *Server & Transit* panel) surfaces
   the events and raw clientbound packets that reveal a **proxy transfer** —
