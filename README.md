@@ -68,6 +68,20 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
 - Sent verbatim: include the leading `/` for a command (e.g. `/tp Steve`), or
   omit it to speak in chat. Each send is echoed in the activity log per bot.
 
+### Diagnostics / Detailed Logging
+- **Verbose debug logging** (toggle in the *Server & Transit* panel) surfaces
+  the events and raw clientbound packets that reveal a **proxy transfer** —
+  `respawn`, `game_state_change`, `login`, `open_window`, `kick_disconnect` —
+  which is the usual reason survival transit "silently fails" on network
+  servers (clicking the item moves you to a different backend server).
+- Disconnects/errors/kicks that occur shortly after a transit click are
+  annotated with how many ms after the click they happened, so a transfer is
+  distinguishable from a real failure. The bot's `Survival` location is
+  preserved across the transfer instead of being reset to `Lobby`.
+- Every log line is also written to **`logs/bot-manager.log`** on the device
+  (`cat logs/bot-manager.log`), and the dashboard has **Copy All** / **Clear**
+  buttons for the live log so you can grab a full trace to share.
+
 ### Graceful Error & Reconnect Handling
 - Kicked/disconnected bots auto-reconnect after a 5-second cooldown.
 - Per-bot errors are contained, plus process-level safety nets, so one bot

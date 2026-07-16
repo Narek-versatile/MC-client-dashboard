@@ -117,6 +117,7 @@
   .lvl-warn { color: var(--yellow); }
   .lvl-error { color: var(--red); }
   .lvl-info { color: var(--text); }
+  .lvl-debug { color: var(--muted); }
   .spacer { height: 2px; }
 </style>
 </head>
@@ -150,11 +151,15 @@
       </div>
     </div>
     <div class="spacer"></div>
-    <div class="row" style="justify-content:space-between;">
+    <div class="row" style="gap:16px;">
       <label class="checkbox"><input type="checkbox" id="cfgGui" checked /> Click chest GUI after command</label>
+      <label class="checkbox"><input type="checkbox" id="cfgDebug" checked /> Verbose debug logging</label>
+    </div>
+    <div class="spacer"></div>
+    <div class="row" style="justify-content:flex-end;">
       <button class="ghost" onclick="saveServer()">Save</button>
     </div>
-    <div class="hint">Tip: if your server transfers you with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box.</div>
+    <div class="hint">Tip: if your server transfers you with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box. Keep <b>debug logging</b> on while diagnosing transit issues.</div>
   </div>
 
   <!-- Command injection -->
@@ -207,8 +212,15 @@
 
   <!-- Log -->
   <div class="panel">
-    <h2>Activity Log</h2>
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;">Activity Log</h2>
+      <div class="row" style="gap:6px;">
+        <button class="ghost small" onclick="copyLog()">Copy All</button>
+        <button class="ghost small" onclick="clearLog()">Clear</button>
+      </div>
+    </div>
     <div id="log"></div>
+    <div class="hint">A full copy is also saved on the phone at <code>logs/bot-manager.log</code> (view with <code>cat logs/bot-manager.log</code>).</div>
   </div>
 
 <script>
@@ -250,6 +262,7 @@
       $('cfgPort').value = state.config.port || '';
       $('cfgTransit').value = state.config.transitCommand || '/server';
       $('cfgGui').checked = state.config.guiClick !== false;
+      $('cfgDebug').checked = state.config.debug !== false;
     }
 
     // Command-injection target dropdown (keep current selection if possible).
@@ -293,16 +306,42 @@
     }).join('');
   }
 
+  const logBuffer = [];
   function appendLog(entry) {
     const box = $('log');
     const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
     const time = new Date(entry.time || Date.now()).toLocaleTimeString();
+    logBuffer.push(`${time} [${entry.level || 'info'}] [${entry.username}] ${entry.message}`);
+    while (logBuffer.length > 1000) logBuffer.shift();
     const div = document.createElement('div');
     div.className = 'logline';
     div.innerHTML = `<span class="t">${time}</span> <span class="tag">[${esc(entry.username)}]</span> <span class="lvl-${esc(entry.level || 'info')}">${esc(entry.message)}</span>`;
     box.appendChild(div);
-    while (box.childElementCount > 300) box.removeChild(box.firstChild);
+    while (box.childElementCount > 500) box.removeChild(box.firstChild);
     if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+  function copyLog() {
+    const text = logBuffer.join('\n');
+    const done = () => alert('Log copied to clipboard.');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (_) { alert('Copy failed — select the log text manually.'); }
+    document.body.removeChild(ta);
+  }
+  function clearLog() {
+    logBuffer.length = 0;
+    $('log').innerHTML = '';
   }
 
   // --- Commands -------------------------------------------------------------
@@ -335,6 +374,7 @@
       port: Number($('cfgPort').value),
       transitCommand: $('cfgTransit').value.trim(),
       guiClick: $('cfgGui').checked,
+      debug: $('cfgDebug').checked,
     });
     cfgTouched = false;
   }
@@ -349,6 +389,7 @@
   ['cfgHost', 'cfgPort', 'cfgTransit'].forEach((id) =>
     $(id).addEventListener('input', () => cfgTouched = true));
   $('cfgGui').addEventListener('change', () => cfgTouched = true);
+  $('cfgDebug').addEventListener('change', () => cfgTouched = true);
   $('newUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newPass').focus(); });
   $('newPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
   $('cmdText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCommand(); });
