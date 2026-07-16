@@ -41,6 +41,8 @@
     margin-bottom: 14px;
   }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+  .hint code { background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; }
   label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
   input, select {
     background: var(--panel-2);
@@ -129,7 +131,7 @@
 
   <!-- Server configuration -->
   <div class="panel">
-    <h2>Server</h2>
+    <h2>Server &amp; Transit</h2>
     <div class="row">
       <div class="field">
         <label>Host</label>
@@ -139,10 +141,39 @@
         <label>Port</label>
         <input id="cfgPort" type="number" placeholder="25565" />
       </div>
-      <div style="align-self:flex-end;">
-        <button class="ghost" onclick="saveServer()">Save</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="row">
+      <div class="field">
+        <label>Survival transit command</label>
+        <input id="cfgTransit" placeholder="/server" />
       </div>
     </div>
+    <div class="spacer"></div>
+    <div class="row" style="justify-content:space-between;">
+      <label class="checkbox"><input type="checkbox" id="cfgGui" checked /> Click chest GUI after command</label>
+      <button class="ghost" onclick="saveServer()">Save</button>
+    </div>
+    <div class="hint">Tip: if your server transfers you with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box.</div>
+  </div>
+
+  <!-- Command injection -->
+  <div class="panel">
+    <h2>Send Command / Chat</h2>
+    <div class="row">
+      <div class="field" style="flex:0 0 150px;">
+        <label>Target</label>
+        <select id="cmdTarget"></select>
+      </div>
+      <div class="field">
+        <label>Command or message</label>
+        <input id="cmdText" placeholder="/tp Steve  or  hello everyone" autocomplete="off" />
+      </div>
+      <div style="align-self:flex-end;">
+        <button onclick="sendCommand()">Send</button>
+      </div>
+    </div>
+    <div class="hint">Sent exactly as typed. Include the leading <code>/</code> for commands; omit it to speak in chat.</div>
   </div>
 
   <!-- Create account -->
@@ -217,7 +248,17 @@
     if (!cfgTouched) {
       $('cfgHost').value = state.config.host || '';
       $('cfgPort').value = state.config.port || '';
+      $('cfgTransit').value = state.config.transitCommand || '/server';
+      $('cfgGui').checked = state.config.guiClick !== false;
     }
+
+    // Command-injection target dropdown (keep current selection if possible).
+    const sel = $('cmdTarget');
+    const prev = sel.value;
+    const opts = ['<option value="__all__">All Bots</option>']
+      .concat(state.accounts.map((a) => `<option value="${esc(a.username)}">${esc(a.username)}</option>`));
+    sel.innerHTML = opts.join('');
+    if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
 
     const container = $('accounts');
     if (!state.accounts.length) {
@@ -281,8 +322,20 @@
     }
   }
   function transit(target) { sendCmd({ type: 'survivalTransit', target }); }
+  function sendCommand() {
+    const message = $('cmdText').value;
+    if (!message.trim()) return;
+    sendCmd({ type: 'sendCommand', target: $('cmdTarget').value, message });
+    $('cmdText').value = '';
+  }
   function saveServer() {
-    sendCmd({ type: 'updateServer', host: $('cfgHost').value.trim(), port: Number($('cfgPort').value) });
+    sendCmd({
+      type: 'updateServer',
+      host: $('cfgHost').value.trim(),
+      port: Number($('cfgPort').value),
+      transitCommand: $('cfgTransit').value.trim(),
+      guiClick: $('cfgGui').checked,
+    });
     cfgTouched = false;
   }
 
@@ -293,10 +346,12 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  $('cfgHost').addEventListener('input', () => cfgTouched = true);
-  $('cfgPort').addEventListener('input', () => cfgTouched = true);
+  ['cfgHost', 'cfgPort', 'cfgTransit'].forEach((id) =>
+    $(id).addEventListener('input', () => cfgTouched = true));
+  $('cfgGui').addEventListener('change', () => cfgTouched = true);
   $('newUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newPass').focus(); });
   $('newPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
+  $('cmdText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCommand(); });
 
   connect();
 </script>

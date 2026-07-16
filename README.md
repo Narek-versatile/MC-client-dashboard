@@ -46,13 +46,27 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
 
 ### Interactive Survival Transit (chest-GUI navigation)
 - User-triggered per bot, or **Survival Transit · All** for every online bot.
-- Sends `/server`, waits for the chest GUI (`windowOpen`), then **searches the
-  container's slots for an item named `iron_pickaxe`** and clicks that exact
-  slot via `bot.clickWindow(slot, 0, 0)`. This avoids hardcoding a slot index,
-  since GUI layouts vary by server/version. If no `iron_pickaxe` is found, it
-  falls back to `survivalSlot` (default `10`) in `lib/botManager.js`.
-- Logs the discovered (or fallback) slot and a success message once the click
-  registers.
+- Sends the configurable **transit command** (default `/server`), then when the
+  chest GUI opens it **waits for the slots to actually populate** before acting
+  — clicking too early makes servers reject the transaction and kick with
+  "internal error". Once populated it **searches for an item named
+  `iron_pickaxe`** and clicks that exact slot via `bot.clickWindow(slot, 0, 0)`
+  (awaited, so transaction rejections are logged instead of crashing).
+- It **logs the full GUI contents** (`slot:item, …`) so you can see exactly
+  what the bot sees. If no `iron_pickaxe` is found it falls back to
+  `survivalSlot` (default `10`).
+- If the GUI never opens within ~5s, it warns that your server may use a direct
+  command instead.
+- **Direct-command mode:** if your server transfers you with a plain command
+  (e.g. `/server survival`), set that as the transit command in the
+  *Server & Transit* panel and **uncheck "Click chest GUI after command"**.
+  The bot then just runs the command with no GUI clicking.
+
+### Command Injection (broadcast or single bot)
+- A **Send Command / Chat** panel lets you send any command or chat line to a
+  specific bot or to **All Bots** at once.
+- Sent verbatim: include the leading `/` for a command (e.g. `/tp Steve`), or
+  omit it to speak in chat. Each send is echoed in the activity log per bot.
 
 ### Graceful Error & Reconnect Handling
 - Kicked/disconnected bots auto-reconnect after a 5-second cooldown.

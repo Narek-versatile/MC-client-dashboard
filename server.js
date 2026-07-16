@@ -116,8 +116,17 @@ function handleCommand(ws, msg) {
         manager.survivalTransit(msg.target);
         break;
 
+      case 'sendCommand':
+        manager.sendCommand(msg.target, msg.message);
+        break;
+
       case 'updateServer':
-        manager.updateServerConfig(msg.host, msg.port);
+        manager.updateConfig({
+          host: msg.host,
+          port: msg.port,
+          transitCommand: msg.transitCommand,
+          guiClick: msg.guiClick,
+        });
         manager.emitState();
         break;
 
