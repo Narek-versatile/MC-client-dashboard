@@ -93,6 +93,14 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
   box (tagged with the bot and the command). Minecraft has no command/response
   correlation, so this is a best-effort time window, not an exact match.
 
+### Wave TPA
+- **Wave TPA** makes every online bot send `/tpa <yourName>` in **batches** —
+  *wave size* bots at a time (default `5`), *interval* seconds apart
+  (default `10`) — so the pending-request count never exceeds what the server
+  lets you hold. Accept a batch, and the next wave fires on schedule.
+- **Cancel** stops any remaining waves. Bots that dropped offline mid-run are
+  skipped. Progress is logged in the **Log** tab.
+
 ### Global Chat (read-only)
 - The **Chat** tab shows live server chat as seen by your bots. Messages seen by
   multiple bots at once are de-duplicated into a single line, tagged with which

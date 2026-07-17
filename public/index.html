@@ -286,6 +286,31 @@
     <div class="hint">Commands only — no global chat is ever sent. Arguments marked <i>(optional)</i> can be left blank.</div>
   </div>
 
+  <!-- Wave TPA -->
+  <div class="panel">
+    <h2>Wave TPA</h2>
+    <div class="row">
+      <div class="field">
+        <label>Teleport to (your in-game name)</label>
+        <input id="waveName" placeholder="YourName" autocomplete="off" />
+      </div>
+      <div class="field" style="flex:0 0 100px;">
+        <label>Wave size</label>
+        <input id="waveSize" type="number" min="1" value="5" />
+      </div>
+      <div class="field" style="flex:0 0 110px;">
+        <label>Interval (sec)</label>
+        <input id="waveInterval" type="number" min="1" value="10" />
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="row" style="justify-content:flex-end; gap:6px;">
+      <button class="warn" onclick="cancelWaveTpa()">Cancel</button>
+      <button onclick="startWaveTpa()">Start Wave TPA</button>
+    </div>
+    <div class="hint">All online bots send <code>/tpa &lt;name&gt;</code> in batches — <b>wave size</b> at a time, <b>interval</b> seconds apart — so you never exceed the server's pending-request cap. Accept each batch, then the next wave fires. Watch progress in the <b>Log</b> tab.</div>
+  </div>
+
   <!-- Freeform command -->
   <div class="panel">
     <h2>Custom Command</h2>
@@ -350,6 +375,7 @@
   let ws = null;
   let state = { accounts: [], config: { host: '', port: '' } };
   let cfgTouched = false;
+  let waveDefaultsSet = false;
 
   const $ = (id) => document.getElementById(id);
 
@@ -391,6 +417,13 @@
       $('cfgGui').checked = state.config.guiClick !== false;
       $('cfgRp').checked = state.config.autoAcceptResourcePack !== false;
       $('cfgDebug').checked = state.config.debug !== false;
+    }
+
+    // Wave TPA defaults (only on first state, so we don't fight the user).
+    if (!waveDefaultsSet && state.config.tpaWaveSize) {
+      $('waveSize').value = state.config.tpaWaveSize;
+      $('waveInterval').value = state.config.tpaWaveIntervalSec || 10;
+      waveDefaultsSet = true;
     }
 
     // Command-target dropdowns (keep current selection if possible).
@@ -501,6 +534,19 @@
     sendCmd({ type: 'sendCommand', target: $('cmdTarget2').value, message, showOutput: $('cmdShowOutput').checked });
     $('cmdText').value = '';
   }
+
+  // --- Wave TPA ------------------------------------------------------------
+  function startWaveTpa() {
+    const player = $('waveName').value.trim();
+    if (!player) { alert('Enter your in-game name to teleport to.'); return; }
+    sendCmd({
+      type: 'waveTpa',
+      player,
+      waveSize: Number($('waveSize').value) || 5,
+      intervalSec: Number($('waveInterval').value) || 10,
+    });
+  }
+  function cancelWaveTpa() { sendCmd({ type: 'cancelTpaWave' }); }
 
   // Built-in command catalog. args: { name, optional }.
   const BUILTINS = [

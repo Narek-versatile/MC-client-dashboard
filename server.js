@@ -122,6 +122,17 @@ function handleCommand(ws, msg) {
         manager.sendCommand(msg.target, msg.message, { showOutput: !!msg.showOutput });
         break;
 
+      case 'waveTpa':
+        manager.waveTpa(msg.player, {
+          waveSize: msg.waveSize,
+          intervalMs: msg.intervalSec ? Number(msg.intervalSec) * 1000 : undefined,
+        });
+        break;
+
+      case 'cancelTpaWave':
+        manager.cancelTpaWave();
+        break;
+
       case 'exportAccounts':
         // Contains passwords — send only to the requesting client.
         send(ws, { type: 'accountsExport', accounts: store.exportList(), time: Date.now() });
