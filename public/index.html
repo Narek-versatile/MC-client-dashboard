@@ -40,6 +40,26 @@
     padding: 14px;
     margin-bottom: 14px;
   }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; }
+  .tab-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600;
+  }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .preview {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px; color: var(--cyan); flex: 1 1 auto; margin-right: 10px;
+    overflow-x: auto; white-space: nowrap;
+  }
+  #chat {
+    background: #0a0c11; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px; height: 340px; overflow-y: auto;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.6;
+  }
+  .chatline { white-space: pre-wrap; word-break: break-word; }
+  .chatline .t { color: var(--muted); font-size: 11px; }
+  .chatline .via { color: var(--accent); font-size: 11px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
   .hint code { background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 11px; }
@@ -130,6 +150,17 @@
     <span class="conn down" id="conn">disconnected</span>
   </div>
 
+  <!-- Tab bar -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" data-tab="commands" onclick="showTab('commands')">Commands</button>
+    <button class="tab-btn" data-tab="chat" onclick="showTab('chat')">Chat</button>
+    <button class="tab-btn" data-tab="log" onclick="showTab('log')">Log</button>
+  </div>
+
+  <!-- ===================== DASHBOARD TAB ===================== -->
+  <div class="tab-page" id="tab-dashboard">
+
   <!-- Server configuration -->
   <div class="panel">
     <h2>Server &amp; Transit</h2>
@@ -167,25 +198,6 @@
     <div class="hint">Tip: if survival transit gets kicked with "internal error", try setting <b>MC version</b> to <code>1.18.2</code> (then restart bots). Keep <b>auto-accept resource packs</b> on for servers like Jartex. If your server transfers with a plain command (e.g. <code>/server survival</code>), put that here and uncheck the GUI box.</div>
   </div>
 
-  <!-- Command injection -->
-  <div class="panel">
-    <h2>Send Command / Chat</h2>
-    <div class="row">
-      <div class="field" style="flex:0 0 150px;">
-        <label>Target</label>
-        <select id="cmdTarget"></select>
-      </div>
-      <div class="field">
-        <label>Command or message</label>
-        <input id="cmdText" placeholder="/tp Steve  or  hello everyone" autocomplete="off" />
-      </div>
-      <div style="align-self:flex-end;">
-        <button onclick="sendCommand()">Send</button>
-      </div>
-    </div>
-    <div class="hint">Sent exactly as typed. Include the leading <code>/</code> for commands; omit it to speak in chat.</div>
-  </div>
-
   <!-- Create account -->
   <div class="panel">
     <h2>Create Account</h2>
@@ -215,7 +227,69 @@
     <div id="accounts"><div class="empty">No accounts yet. Create one above.</div></div>
   </div>
 
-  <!-- Log -->
+  </div><!-- /dashboard tab -->
+
+  <!-- ===================== COMMANDS TAB ===================== -->
+  <div class="tab-page" id="tab-commands" style="display:none;">
+
+  <!-- Built-in commands -->
+  <div class="panel">
+    <h2>Built-in Commands</h2>
+    <div class="row">
+      <div class="field" style="flex:0 0 150px;">
+        <label>Target</label>
+        <select id="cmdTarget"></select>
+      </div>
+      <div class="field">
+        <label>Command</label>
+        <select id="builtinSelect" onchange="renderArgs()"></select>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id="argFields"></div>
+    <div class="spacer"></div>
+    <div class="row" style="justify-content:space-between; align-items:center;">
+      <code id="builtinPreview" class="preview">/</code>
+      <button onclick="runBuiltin()">Run</button>
+    </div>
+    <div class="hint">Commands only — no global chat is ever sent. Arguments marked <i>(optional)</i> can be left blank.</div>
+  </div>
+
+  <!-- Freeform command -->
+  <div class="panel">
+    <h2>Custom Command</h2>
+    <div class="row">
+      <div class="field" style="flex:0 0 150px;">
+        <label>Target</label>
+        <select id="cmdTarget2"></select>
+      </div>
+      <div class="field">
+        <label>Command</label>
+        <input id="cmdText" placeholder="tpa Steve" autocomplete="off" />
+      </div>
+      <div style="align-self:flex-end;">
+        <button onclick="sendCustom()">Send</button>
+      </div>
+    </div>
+    <div class="hint">A leading <code>/</code> is added automatically. This can <b>only</b> send commands — it can never post to global chat.</div>
+  </div>
+
+  </div><!-- /commands tab -->
+
+  <!-- ===================== CHAT TAB ===================== -->
+  <div class="tab-page" id="tab-chat" style="display:none;">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0;">Global Chat</h2>
+      <button class="ghost small" onclick="clearChat()">Clear</button>
+    </div>
+    <div id="chat"></div>
+    <div class="hint">Live server chat as seen by your bots (duplicates across bots are merged). Read-only — sending chat is disabled by design.</div>
+  </div>
+  </div><!-- /chat tab -->
+
+  <!-- ===================== LOG TAB ===================== -->
+  <div class="tab-page" id="tab-log" style="display:none;">
   <div class="panel">
     <div class="row" style="justify-content:space-between; margin-bottom:10px;">
       <h2 style="margin:0;">Activity Log</h2>
@@ -225,8 +299,9 @@
       </div>
     </div>
     <div id="log"></div>
-    <div class="hint">A full copy is also saved on the phone at <code>logs/bot-manager.log</code> (view with <code>cat logs/bot-manager.log</code>).</div>
+    <div class="hint">A full copy is also saved at <code>logs/bot-manager.log</code>.</div>
   </div>
+  </div><!-- /log tab -->
 
 <script>
   let ws = null;
@@ -246,6 +321,7 @@
       try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.type === 'state') { state = msg; renderState(); }
       else if (msg.type === 'log') { appendLog(msg); }
+      else if (msg.type === 'chat') { appendChat(msg); }
     };
   }
 
@@ -272,13 +348,17 @@
       $('cfgDebug').checked = state.config.debug !== false;
     }
 
-    // Command-injection target dropdown (keep current selection if possible).
-    const sel = $('cmdTarget');
-    const prev = sel.value;
+    // Command-target dropdowns (keep current selection if possible).
     const opts = ['<option value="__all__">All Bots</option>']
-      .concat(state.accounts.map((a) => `<option value="${esc(a.username)}">${esc(a.username)}</option>`));
-    sel.innerHTML = opts.join('');
-    if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+      .concat(state.accounts.map((a) => `<option value="${esc(a.username)}">${esc(a.username)}</option>`))
+      .join('');
+    ['cmdTarget', 'cmdTarget2'].forEach((id) => {
+      const sel = $(id);
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = opts;
+      if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    });
 
     const container = $('accounts');
     if (!state.accounts.length) {
@@ -368,12 +448,90 @@
     }
   }
   function transit(target) { sendCmd({ type: 'survivalTransit', target }); }
-  function sendCommand() {
+
+  // --- Command injection (commands only) -----------------------------------
+  function sendCustom() {
     const message = $('cmdText').value;
     if (!message.trim()) return;
-    sendCmd({ type: 'sendCommand', target: $('cmdTarget').value, message });
+    sendCmd({ type: 'sendCommand', target: $('cmdTarget2').value, message });
     $('cmdText').value = '';
   }
+
+  // Built-in command catalog. args: { name, optional }.
+  const BUILTINS = [
+    { label: 'tpa — request teleport to a player', cmd: 'tpa', args: [{ name: 'player' }] },
+    { label: 'tpahere — ask a player to teleport to you', cmd: 'tpahere', args: [{ name: 'player' }] },
+    { label: 'tpaccept — accept a teleport request', cmd: 'tpaccept', args: [{ name: 'player', optional: true }] },
+    { label: 'tpdeny — deny a teleport request', cmd: 'tpdeny', args: [{ name: 'player', optional: true }] },
+    { label: 'tpacancel — cancel your teleport request', cmd: 'tpacancel', args: [] },
+    { label: 'home — go to a home', cmd: 'home', args: [{ name: 'name', optional: true }] },
+    { label: 'sethome — set a home', cmd: 'sethome', args: [{ name: 'name', optional: true }] },
+    { label: 'delhome — delete a home', cmd: 'delhome', args: [{ name: 'name' }] },
+    { label: 'warp — warp to a named location', cmd: 'warp', args: [{ name: 'name' }] },
+    { label: 'spawn — go to spawn', cmd: 'spawn', args: [] },
+    { label: 'back — return to previous location', cmd: 'back', args: [] },
+    { label: 'balance — check your balance', cmd: 'balance', args: [] },
+    { label: 'pay — pay a player', cmd: 'pay', args: [{ name: 'player' }, { name: 'amount' }] },
+    { label: 'msg — private message a player', cmd: 'msg', args: [{ name: 'player' }, { name: 'text...' }] },
+    { label: 'server — open server selector', cmd: 'server', args: [{ name: 'name', optional: true }] },
+    { label: 'kit — claim a kit', cmd: 'kit', args: [{ name: 'name', optional: true }] },
+  ];
+
+  function initBuiltins() {
+    $('builtinSelect').innerHTML = BUILTINS
+      .map((b, i) => `<option value="${i}">${esc(b.label)}</option>`).join('');
+    renderArgs();
+  }
+  function currentBuiltin() { return BUILTINS[Number($('builtinSelect').value) || 0]; }
+  function renderArgs() {
+    const b = currentBuiltin();
+    $('argFields').innerHTML = b.args.length === 0
+      ? '<div class="hint" style="margin:0;">No arguments.</div>'
+      : `<div class="row">${b.args.map((a, i) =>
+          `<div class="field"><label>${esc(a.name)}${a.optional ? ' (optional)' : ''}</label>
+           <input class="argInput" data-i="${i}" oninput="updatePreview()" autocomplete="off" /></div>`).join('')}</div>`;
+    updatePreview();
+  }
+  function buildBuiltin() {
+    const b = currentBuiltin();
+    const vals = [...document.querySelectorAll('.argInput')].map((el) => el.value.trim());
+    const parts = ['/' + b.cmd];
+    b.args.forEach((a, i) => { if (vals[i]) parts.push(vals[i]); });
+    return parts.join(' ');
+  }
+  function updatePreview() { $('builtinPreview').textContent = buildBuiltin(); }
+  function runBuiltin() {
+    const b = currentBuiltin();
+    const vals = [...document.querySelectorAll('.argInput')].map((el) => el.value.trim());
+    for (let i = 0; i < b.args.length; i++) {
+      if (!b.args[i].optional && !vals[i]) { alert(`"${b.args[i].name}" is required.`); return; }
+    }
+    sendCmd({ type: 'sendCommand', target: $('cmdTarget').value, message: buildBuiltin() });
+  }
+
+  // --- Tabs ----------------------------------------------------------------
+  function showTab(name) {
+    ['dashboard', 'commands', 'chat', 'log'].forEach((t) => {
+      $('tab-' + t).style.display = t === name ? '' : 'none';
+    });
+    document.querySelectorAll('.tab-btn').forEach((b) =>
+      b.classList.toggle('active', b.dataset.tab === name));
+  }
+
+  // --- Chat feed -----------------------------------------------------------
+  function appendChat(entry) {
+    const box = $('chat');
+    const atBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 20;
+    const time = new Date(entry.time || Date.now()).toLocaleTimeString();
+    const div = document.createElement('div');
+    div.className = 'chatline';
+    div.innerHTML = `<span class="t">${time}</span> <span class="via">(${esc(entry.via)})</span> ${esc(entry.text)}`;
+    box.appendChild(div);
+    while (box.childElementCount > 500) box.removeChild(box.firstChild);
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+  function clearChat() { $('chat').innerHTML = ''; }
+
   function saveServer() {
     sendCmd({
       type: 'updateServer',
@@ -401,8 +559,9 @@
     $(id).addEventListener('change', () => cfgTouched = true));
   $('newUser').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('newPass').focus(); });
   $('newPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') createAccount(); });
-  $('cmdText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCommand(); });
+  $('cmdText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendCustom(); });
 
+  initBuiltins();
   connect();
 </script>
 </body>

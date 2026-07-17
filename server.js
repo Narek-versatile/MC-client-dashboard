@@ -64,6 +64,7 @@ function broadcast(obj) {
 // Relay engine events to every connected browser.
 manager.on('state', (state) => broadcast({ type: 'state', ...state }));
 manager.on('log', (entry) => broadcast({ type: 'log', ...entry }));
+manager.on('chat', (entry) => broadcast({ type: 'chat', ...entry }));
 
 wss.on('connection', (ws) => {
   // Push the current snapshot immediately on connect.

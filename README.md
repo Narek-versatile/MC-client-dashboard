@@ -10,6 +10,8 @@ survival transit — no terminal juggling required.
 
 ## Quick Start
 
+### Android (Termux)
+
 ```bash
 # 1. Clone the repository
 git clone <your-repo-url> MC-client-dashboard
@@ -19,11 +21,22 @@ cd MC-client-dashboard
 bash setup.sh
 
 # 3. Launch the headless service
-node server.js
+node server.js       # or: bash refresh.sh  (pull latest + relaunch)
 
 # 4. Open the dashboard in your phone browser
 #    http://localhost:3000
 ```
+
+### Windows
+
+1. Install **Node.js LTS** from <https://nodejs.org/en/download> (once).
+2. Double-click **`setup.bat`** (installs dependencies).
+3. Double-click **`run.bat`** to start the service (or `refresh.bat` to pull
+   latest + relaunch).
+4. Open <http://localhost:3000> in your browser.
+
+The service is plain Node.js, so it runs identically on Android, Windows,
+macOS, and Linux — only the launcher scripts differ.
 
 ## Features
 
@@ -62,11 +75,24 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
   *Server & Transit* panel and **uncheck "Click chest GUI after command"**.
   The bot then just runs the command with no GUI clicking.
 
-### Command Injection (broadcast or single bot)
-- A **Send Command / Chat** panel lets you send any command or chat line to a
-  specific bot or to **All Bots** at once.
-- Sent verbatim: include the leading `/` for a command (e.g. `/tp Steve`), or
-  omit it to speak in chat. Each send is echoed in the activity log per bot.
+### Commands (broadcast or single bot) — commands only
+- The **Commands** tab sends commands to a specific bot or to **All Bots**.
+- **Commands only, by design:** input is always issued as a command — a leading
+  `/` is added automatically and can't be removed, so the bots can **never**
+  post to global chat.
+- **Built-in commands** dropdown with common presets (`tpa`, `tpahere`,
+  `tpaccept`, `home`, `sethome`, `warp`, `spawn`, `pay`, `msg`, …) that render
+  argument fields and a live `/command …` preview before you Run it.
+- **Custom command** box for anything not in the list.
+
+### Global Chat (read-only)
+- The **Chat** tab shows live server chat as seen by your bots. Messages seen by
+  multiple bots at once are de-duplicated into a single line, tagged with which
+  bot observed it. It is read-only — there is no way to send chat.
+
+### Tabbed UI
+- The dashboard is organized into **Dashboard**, **Commands**, **Chat**, and
+  **Log** tabs so everything stays usable on a phone screen.
 
 ### Server transfers, resource packs & version
 Some networks (e.g. **JartexNetwork**) move you to survival by transferring you
@@ -76,9 +102,10 @@ that transfer fail with *"An internal error occurred in your connection"*:
   resource pack; if it goes unanswered you get kicked. **Auto-accept resource
   packs** (on by default, toggle in *Server & Transit*) answers it.
 - **Protocol version** — the modern (1.20.2+) configuration-phase transfer is
-  handled poorly by the bot library. Setting **MC version** to an older value
-  like `1.18.2` sidesteps it. Leave the field blank to auto-detect. Restart the
-  bot after changing the version.
+  handled poorly by the bot library. The project therefore **defaults to
+  `1.18.2`**, which sidesteps it and is confirmed working on Jartex. You can
+  change **MC version** in *Server & Transit* (blank = auto-detect); restart the
+  bot after changing it.
 
 ### Diagnostics / Detailed Logging
 - **Verbose debug logging** (toggle in the *Server & Transit* panel) surfaces
