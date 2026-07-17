@@ -45,6 +45,10 @@ macOS, and Linux — only the launcher scripts differ.
 - Each account is saved to `accounts.json` in the project root, so it survives
   restarts. (This file holds passwords and is git-ignored.)
 - Start / stop / delete any bot individually; passwords can be updated.
+- **Import / Export (JSON):** back up or transfer your whole account list.
+  *Export JSON* downloads `accounts.json` (includes passwords — keep it
+  private); *Import* accepts a file or pasted JSON and merges by username
+  (existing accounts are skipped unless **Overwrite** is ticked).
 
 ### Smart / Conditional Authentication with Register Redundancy
 Bots connect in **offline mode**. Based on server chat (case-insensitive):
@@ -84,6 +88,10 @@ Bots connect in **offline mode**. Based on server chat (case-insensitive):
   `tpaccept`, `home`, `sethome`, `warp`, `spawn`, `pay`, `msg`, …) that render
   argument fields and a live `/command …` preview before you Run it.
 - **Custom command** box for anything not in the list.
+- **Show output:** tick this on either command panel to capture the server's
+  chat replies for ~3s after the command and print them in a **Command Output**
+  box (tagged with the bot and the command). Minecraft has no command/response
+  correlation, so this is a best-effort time window, not an exact match.
 
 ### Global Chat (read-only)
 - The **Chat** tab shows live server chat as seen by your bots. Messages seen by

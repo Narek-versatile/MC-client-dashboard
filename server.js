@@ -65,6 +65,7 @@ function broadcast(obj) {
 manager.on('state', (state) => broadcast({ type: 'state', ...state }));
 manager.on('log', (entry) => broadcast({ type: 'log', ...entry }));
 manager.on('chat', (entry) => broadcast({ type: 'chat', ...entry }));
+manager.on('output', (entry) => broadcast({ type: 'output', ...entry }));
 
 wss.on('connection', (ws) => {
   // Push the current snapshot immediately on connect.
@@ -118,8 +119,21 @@ function handleCommand(ws, msg) {
         break;
 
       case 'sendCommand':
-        manager.sendCommand(msg.target, msg.message);
+        manager.sendCommand(msg.target, msg.message, { showOutput: !!msg.showOutput });
         break;
+
+      case 'exportAccounts':
+        // Contains passwords — send only to the requesting client.
+        send(ws, { type: 'accountsExport', accounts: store.exportList(), time: Date.now() });
+        break;
+
+      case 'importAccounts': {
+        const arr = Array.isArray(msg.accounts) ? msg.accounts : JSON.parse(String(msg.json || '[]'));
+        const res = store.importList(arr, !!msg.overwrite);
+        manager.log(null, `Imported accounts — added ${res.added}, updated ${res.updated}, skipped ${res.skipped}.`, 'success');
+        manager.emitState();
+        break;
+      }
 
       case 'updateServer':
         manager.updateConfig({
